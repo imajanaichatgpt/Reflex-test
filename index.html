@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reflex Lab Pro | Desktop</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap');
+
+        :root {
+            --bg: #0b0e14;
+            --surface: #161b22;
+            --accent: #58a6ff;
+            --success: #238636;
+            --error: #da3633;
+            --warning: #eab308;
+            --text: #c9d1d9;
+            --text-dim: #8b949e;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Sidebar - Session History */
+        #sidebar {
+            width: 320px;
+            background: var(--surface);
+            border-right: 1px solid #30363d;
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+        }
+
+        .history-title { 
+            font-size: 0.75rem; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            color: var(--text-dim); 
+            margin-bottom: 20px;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 10px;
+        }
+
+        .history-list { 
+            list-style: none; 
+            padding: 0; 
+            margin: 0; 
+            overflow-y: auto; 
+            flex-grow: 1;
+        }
+
+        .history-item { 
+            padding: 12px 16px; 
+            background: rgba(255,255,255,0.03); 
+            border-radius: 8px; 
+            margin-bottom: 8px; 
+            display: flex; 
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid transparent;
+            animation: slideIn 0.2s ease-out;
+        }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* Main Game Layout */
+        #main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 40px;
+            gap: 24px;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid #30363d;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .stat-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+        .stat-value { font-size: 2rem; font-weight: 700; color: var(--accent); margin-top: 5px; }
+
+        /* The Interaction Zone */
+        #click-zone {
+            flex: 1;
+            background: var(--surface);
+            border-radius: 24px;
+            border: 2px solid #30363d;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        #click-zone:hover { border-color: #484f58; }
+
+        /* State Styles */
+        #click-zone.waiting { background: rgba(218, 54, 51, 0.05); border-color: var(--error); cursor: wait; }
+        #click-zone.go { background: rgba(35, 134, 54, 0.15); border-color: var(--success); }
+        #click-zone.warning { 
+            border-color: var(--warning); 
+            background: rgba(234, 179, 8, 0.1);
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; 
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(3px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+
+        #main-hint { font-size: 3.5rem; font-weight: 700; transition: transform 0.2s ease; }
+        #sub-hint { color: var(--text-dim); font-size: 1.2rem; margin-top: 15px; }
+
+        .key-badge {
+            position: absolute;
+            bottom: 30px;
+            background: #000;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            border: 1px solid #30363d;
+            color: var(--text-dim);
+        }
+
+        /* Success Pulse */
+        .go #main-hint { color: var(--success); text-shadow: 0 0 20px rgba(35, 134, 54, 0.5); }
+        .warning #main-hint { color: var(--warning); }
+    </style>
+</head>
+<body>
+
+    <aside id="sidebar">
+        <div class="history-title">Session History</div>
+        <div id="history-list" class="history-list"></div>
+    </aside>
+
+    <main id="main">
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-label">Best Response</div>
+                <div id="best-val" class="stat-value">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Last 5 Average</div>
+                <div id="avg-val" class="stat-value">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Clicks</div>
+                <div id="count-val" class="stat-value">0</div>
+            </div>
+        </div>
+
+        <div id="click-zone">
+            <div id="main-hint">Click to Start</div>
+            <div id="sub-hint">Precision timing enabled.</div>
+            <div class="key-badge">OR PRESS SPACE</div>
+        </div>
+    </main>
+
+    <script>
+        const zone = document.getElementById('click-zone');
+        const mainHint = document.getElementById('main-hint');
+        const subHint = document.getElementById('sub-hint');
+        const historyList = document.getElementById('history-list');
+        
+        let state = 'IDLE'; // IDLE, WAITING, GO, WARNING
+        let startTime, timeout;
+        let scores = [];
+
+        function updateUI(main, sub, stateClass) {
+            mainHint.innerText = main;
+            subHint.innerText = sub;
+            zone.className = stateClass;
+        }
+
+        function handleInteraction() {
+            if (state === 'IDLE') {
+                startTest();
+            } 
+            else if (state === 'WAITING') {
+                triggerWarning();
+            } 
+            else if (state === 'GO') {
+                recordScore();
+            }
+        }
+
+        function startTest() {
+            state = 'WAITING';
+            updateUI('WAITING...', 'Click when the screen turns green', 'waiting');
+            
+            const delay = Math.random() * 3000 + 2000; // 2-5 second delay
+            timeout = setTimeout(() => {
+                state = 'GO';
+                updateUI('GO!', 'CLICK NOW!', 'go');
+                startTime = performance.now();
+            }, delay);
+        }
+
+        function triggerWarning() {
+            clearTimeout(timeout);
+            state = 'WARNING';
+            updateUI('TOO EARLY!', 'A bit too fast. Try again.', 'warning');
+            
+            // Auto-reset to IDLE after warning animation
+            setTimeout(() => {
+                state = 'IDLE';
+                updateUI('Click to Start', 'Precision timing enabled.', '');
+            }, 1200);
+        }
+
+        function recordScore() {
+            const endTime = performance.now();
+            const reaction = Math.round(endTime - startTime);
+            state = 'IDLE';
+            
+            scores.unshift(reaction);
+            updateUI(`${reaction}ms`, 'Click to test again.', '');
+            updateStatistics(reaction);
+        }
+
+        function updateStatistics(lastScore) {
+            // Add to sidebar
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `<span style="color:var(--text-dim)">#${scores.length}</span> <strong>${lastScore}ms</strong>`;
+            historyList.prepend(item);
+
+            // Update top cards
+            document.getElementById('count-val').innerText = scores.length;
+            document.getElementById('best-val').innerText = Math.min(...scores) + 'ms';
+            
+            if (scores.length > 0) {
+                const last5 = scores.slice(0, 5);
+                const avg = Math.round(last5.reduce((a, b) => a + b) / last5.length);
+                document.getElementById('avg-val').innerText = avg + 'ms';
+            }
+        }
+
+        // Event Listeners
+        zone.addEventListener('mousedown', (e) => {
+            if(e.button === 0) handleInteraction();
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if(e.code === 'Space') {
+                e.preventDefault(); // Prevent scrolling page
+                handleInteraction();
+            }
+        });
+    </script>
+</body>
+</html>
